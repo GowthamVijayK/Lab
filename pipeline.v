@@ -32,7 +32,7 @@
 	output        dmem_write_ready,
 	output [31:0] dmem_write_address,
 	output [31:0] dmem_write_data,
-	output [3:0]  dmem_write_byte,
+	output [3:0]  dmem_write_byte
 );
     
 	//Declaring Wires and Registers
@@ -140,7 +140,8 @@ IF_ID IF_ID_stage (
 	// Previously pipe.* signals (now explicit ports)
 	.stall_read_i   	(stall_read),
 	.inst_fetch_pc  	(inst_fetch_pc),
-	.instruction_i  	(instruction),
+	.instruction_i  	(inst_mem_read_data),
+	//changed instruction to inst_mem_read_data
 
 	// WB-stage signals
 	.wb_stall       	(wb_stall),
