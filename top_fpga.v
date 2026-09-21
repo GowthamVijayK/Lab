@@ -12,7 +12,9 @@ output [15:0] led
     
 );
 
-wire [15:0] pc_disp = pipe_u.inst_fetch_pc[15:0];
+//wire [15:0] pc_disp = pipe_u.inst_fetch_pc[15:0];
+wire [31:0] pc_out;
+wire [15:0] pc_disp = pc_out[15:0];
 wire exception;
 	////////////////////////////////////////////////////////////
 	// Slow clock generator (clock divider)
@@ -47,6 +49,16 @@ end
 	wire [31:0] dmem_read_data;
 	wire    	dmem_write_valid;
 	wire    	dmem_read_valid;
+	//ADDED MEMORY WIRES
+	wire [31:0] inst_mem_address;
+
+	wire        dmem_read_ready;
+	wire [31:0] dmem_read_address;
+
+	wire        dmem_write_ready;
+	wire [31:0] dmem_write_address;
+	wire [31:0] dmem_write_data;
+	wire [3:0]  dmem_write_byte;
 
 	assign inst_mem_is_valid = 1'b1;
 	assign dmem_write_valid  = 1'b1;
@@ -57,18 +69,28 @@ assign led = pc_disp;
 // PIPELINE CPU
 ////////////////////////////////////////////////////////////
 pipe pipe_u (
-	.clk(clk),
-	.reset(reset),
-	.stall(1'b0),
-	.exception(exception),
+    .clk(clk),
+    .reset(reset),
+    .stall(1'b0),
+    .exception(exception),
 
-	.inst_mem_is_valid(inst_mem_is_valid),
-	.inst_mem_read_data(inst_mem_read_data),
+    .pc_out(pc_out),
 
-	.dmem_read_data_temp(dmem_read_data),
-	.dmem_write_valid(dmem_write_valid),
-	.dmem_read_valid(dmem_read_valid)
-// TODO: Might have a few more port signals
+    .inst_mem_is_valid(inst_mem_is_valid),
+    .inst_mem_read_data(inst_mem_read_data),
+    .inst_mem_address(inst_mem_address),
+
+    .dmem_read_data_temp(dmem_read_data),
+    .dmem_write_valid(dmem_write_valid),
+    .dmem_read_valid(dmem_read_valid),
+
+    .dmem_read_ready(dmem_read_ready),
+    .dmem_read_address(dmem_read_address),
+
+    .dmem_write_ready(dmem_write_ready),
+    .dmem_write_address(dmem_write_address),
+    .dmem_write_data(dmem_write_data),
+    .dmem_write_byte(dmem_write_byte)
 );
 
 
@@ -77,7 +99,8 @@ pipe pipe_u (
 ////////////////////////////////////////////////////////////
 instr_mem IMEM (
 	.clk(clk),
-	.pc(TODO: Add inst_mem_address as a port signal from the pipe),
+	//.pc(TODO: Add inst_mem_address as a port signal from the pipe),
+	.pc(inst_mem_address),
 	.instr(inst_mem_read_data)
 );
 
@@ -86,16 +109,16 @@ instr_mem IMEM (
 // DATA MEMORY  (matches data_mem.v)
 ////////////////////////////////////////////////////////////
 data_mem DMEM (
-	.clk(clk),
+    .clk(clk),
 
-	.re(TODO: Add dmem_read_ready as a port signal from the pipe),
-	.raddr(TODO),
-	.rdata(dmem_read_data),
+    .re(dmem_read_ready),
+    .raddr(dmem_read_address),
+    .rdata(dmem_read_data),
 
-	.we(TODO: Add dmem_write_ready as a port signal from the pipe),
-	.waddr(TODO),
-	.wdata(TODO),
-	.wstrb(TODO: Add dmem_write_byte as a port signal from the pipe)
+    .we(dmem_write_ready),
+    .waddr(dmem_write_address),
+    .wdata(dmem_write_data),
+    .wstrb(dmem_write_byte)
 );
 
 
