@@ -37,6 +37,16 @@ assign dmem_write_valid  = 1'b1;
 assign dmem_read_valid   = 1'b1;
 
 wire exception;
+//ADDED NEW MEMORY WIRES
+wire [31:0] inst_mem_address;
+
+wire        dmem_read_ready;
+wire [31:0] dmem_read_address;
+
+wire        dmem_write_ready;
+wire [31:0] dmem_write_address;
+wire [31:0] dmem_write_data;
+wire [3:0]  dmem_write_byte;
 
 
 ////////////////////////////////////////////////////////////
@@ -53,8 +63,19 @@ pipe DUT (
 
 	.dmem_read_data_temp(dmem_read_data),
 	.dmem_write_valid(dmem_write_valid),
-	.dmem_read_valid(dmem_read_valid)
+	.dmem_read_valid(dmem_read_valid),
 // TODO: Might have a few more port signals
+
+	.inst_mem_address(inst_mem_address),
+
+    .dmem_read_ready(dmem_read_ready),
+    .dmem_read_address(dmem_read_address),
+
+    .dmem_write_ready(dmem_write_ready),
+    .dmem_write_address(dmem_write_address),
+    .dmem_write_data(dmem_write_data),
+    .dmem_write_byte(dmem_write_byte)
+
 );
 
 
@@ -63,7 +84,8 @@ pipe DUT (
 ////////////////////////////////////////////////////////////
 instr_mem IMEM (
 	.clk(clk),
-	.pc(TODO: Add inst_mem_address as a port signal from the pipe),
+	.pc(inst_mem_address),
+	//.pc(TODO: Add inst_mem_address as a port signal from the pipe),
 	.instr(inst_mem_read_data)
 );
 
@@ -74,14 +96,22 @@ instr_mem IMEM (
 data_mem DMEM (
 	.clk(clk),
 
-	.re(TODO: Add dmem_read_ready as a port signal from the pipe),
-	.raddr(TODO),
+	// .re(TODO: Add dmem_read_ready as a port signal from the pipe),
+	// .raddr(TODO),
+	// .rdata(dmem_read_data),
+
+	// .we(TODO: Add dmem_write_ready as a port signal from the pipe),
+	// .waddr(TODO),
+	// .wdata(TODO),
+	// .wstrb(TODO: Add dmem_write_byte as a port signal from the pipe)
+	.re(dmem_read_ready),
+	.raddr(dmem_read_address),
 	.rdata(dmem_read_data),
 
-	.we(TODO: Add dmem_write_ready as a port signal from the pipe),
-	.waddr(TODO),
-	.wdata(TODO),
-	.wstrb(TODO: Add dmem_write_byte as a port signal from the pipe)
+	.we(dmem_write_ready),
+	.waddr(dmem_write_address),
+	.wdata(dmem_write_data),
+	.wstrb(dmem_write_byte)    	
 );
 
 
