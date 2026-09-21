@@ -203,11 +203,11 @@ integer i;
 always @(posedge clk or negedge reset) begin
 	if (!reset) begin
     	for (i = 1; i < 32; i = i + 1)
-        	regs[i] <= TODO;
+			regs[i] <= 32'h0;
 	end
 	else if (wb_alu_to_reg && !stall_read && !wb_stall) begin
     	regs[wb_dest_reg_sel] <=
-        	wb_mem_to_reg ? wb_read_data : TODO;
+        	wb_mem_to_reg ? wb_read_data : wb_result;
 	end
 end
 
@@ -226,51 +226,92 @@ end
 
 // instantiating execute module -----------------------------------
 execute execute (
-	// -----------------
-	// Clock / Reset
-	// -----------------
-	.clk          	(clk),
-	.reset        	(reset),
+    .clk   (clk),
+    .reset (reset),
 
-	// -----------------
-	// FROM ID/EX
-	// -----------------
-	// ---- TODO: Connect ID/EX signals ----
-	// .reg_rdata1   ( ... ),
-	// Add remaining ID/EX connections here
+    // =========================================================
+    // 1. INPUTS TO EXECUTE FROM ID/EX
+    // =========================================================
+    // Register values
+    .reg_rdata1    (reg_rdata1),
+    .reg_rdata2    (reg_rdata2),
+
+    // Immediate and PC information
+    .execute_imm   (execute_immediate),
+    .pc            (pc),
+    .fetch_pc      (fetch_pc),
+
+    // Instruction control signals
+    .immediate_sel (immediate_sel),
+    .mem_write     (mem_write),
+    .jal           (jal),
+    .jalr          (jalr),
+    .lui           (lui),
+    .alu           (alu),
+    .branch        (branch),
+    .arithsubtype  (arithsubtype),
+    .mem_to_reg    (mem_to_reg),
+    .stall_read    (stall_read),
+
+    // Destination register and ALU control
+    .dest_reg_sel  (dest_reg_sel),
+    .alu_op        (alu_operation),
+
+    // Data memory address offset
+    .dmem_raddr    (dmem_read_offset),
 
 
-	// -----------------
-	// FROM WB
-	// -----------------
-	.wb_branch_i  	(wb_branch),
-	.wb_branch_nxt_i  (wb_branch_nxt),
+    // =========================================================
+    // 2. FEEDBACK INPUTS TO EXECUTE FROM WB
+    // =========================================================
+    // These are not normal instruction inputs.
+    // They provide branch-related information from WB.
+    .wb_branch_i     (wb_branch),
+    .wb_branch_nxt_i (wb_branch_nxt),
 
-	// -----------------
-	// EX → PIPE
-	// -----------------
-	.alu_operand1 	(alu_operand1),
-	.alu_operand2 	(alu_operand2),
-	.write_address	(write_address),
-	.branch_stall 	(branch_stall),
-	.next_pc      	(next_pc),
-	.branch_taken 	(branch_taken),
 
-	// -----------------
-	// EX → WB
-	// -----------------
-	// ---- TODO: Connect EX → WB signals ----
-	// .wb_result (wb_result)
-	// .wb_mem_write
-	// .wb_alu_to_reg
-	// .wb_dest_reg_sel
-	// .wb_branch
-	// .wb_branch_nxt
-	// .wb_mem_to_reg
-	// .wb_read_address
-	// .mem_alu_operation
+    // =========================================================
+    // 3. OUTPUTS FROM EXECUTE TO PIPELINE
+    // =========================================================
+    // ALU operands and memory address
+    .alu_operand1  (alu_operand1),
+    .alu_operand2  (alu_operand2),
+    .write_address (write_address),
+
+    // Branch and PC control outputs
+    .branch_stall  (branch_stall),
+    .next_pc       (next_pc),
+    .branch_taken  (branch_taken),
+
+
+    // =========================================================
+    // 4. OUTPUTS FROM EXECUTE TRANSFERRED TO WB
+    // =========================================================
+    // Calculated ALU result
+    .wb_result          (wb_result),
+
+    // Store instruction control
+    .wb_mem_write       (wb_mem_write),
+
+    // Indicates whether the instruction writes to a register
+    .wb_alu_to_reg      (wb_alu_to_reg),
+
+    // Destination register number
+    .wb_dest_reg_sel    (wb_dest_reg_sel),
+
+    // Branch information passed to WB
+    .wb_branch          (wb_branch),
+    .wb_branch_nxt      (wb_branch_nxt),
+
+    // Indicates whether data memory result is used
+    .wb_mem_to_reg      (wb_mem_to_reg),
+
+    // Address used for memory read
+    .wb_read_address    (wb_read_address),
+
+    // ALU operation information for memory processing
+    .mem_alu_operation  (wb_alu_operation)
 );
-
 
 
 ////////////////////////////////////////////////////////////
@@ -300,38 +341,61 @@ end
 
 // instantiating Writeback module ----------------------------------
 wb wb_stage (
-   .clk(clk),
-   .reset(reset),
+    .clk   (clk),
+    .reset (reset),
 
-   // -----------------
-   // TODO: Connect WB inputs
-   // -----------------
-   // .stall_read_i
-   // .fetch_pc_i
-   // .wb_branch_i
-   // .wb_mem_to_reg_i
-   // .mem_write_i
-   // .write_address_i
-   // .alu_operand2_i
-   // .alu_operation_i
-   // .wb_alu_operation_i
-   // .wb_read_address_i
-   // .dmem_read_data_i
-   // .dmem_write_valid_i
+    // =========================================================
+    // 1. INPUTS TO WB
+    // =========================================================
+    // From pipeline / Execute
+    .stall_read_i       (stall_read),
+    .fetch_pc_i         (fetch_pc),
 
-   // -----------------
-   // TODO: Connect WB outputs
-   // -----------------
-   // .inst_mem_address_o
-   // .inst_mem_is_ready_o
-   // .wb_stall_o
-   // .wb_write_address_o
-   // .wb_write_data_o
-   // .wb_write_byte_o
-   // .wb_read_data_o
-   // .inst_fetch_pc_o
-   // .wb_stall_first_o
-   // .wb_stall_second_o
+    // Branch and memory control
+    .wb_branch_i        (wb_branch),
+    .wb_mem_to_reg_i    (wb_mem_to_reg),
+    .mem_write_i        (wb_mem_write),
+
+    // Store address and store data
+    .write_address_i    (write_address),
+    .alu_operand2_i     (alu_operand2),
+
+    // ALU operation for store instructions
+    .alu_operation_i    (alu_operation),
+
+    // Load operation and memory read offset
+    .wb_alu_operation_i (wb_alu_operation),
+    .wb_read_address_i  (wb_read_address),
+
+    // Data received from data memory
+    .dmem_read_data_i   (dmem_read_data),
+    .dmem_write_valid_i (dmem_write_valid),
+
+
+    // =========================================================
+    // 2. OUTPUTS FROM WB
+    // =========================================================
+    // Instruction memory signals
+    .inst_mem_address_o   (inst_mem_address),
+    .inst_mem_is_ready_o  (inst_mem_is_ready),
+
+    // Stall signals sent back to pipeline
+    .wb_stall_o           (wb_stall),
+
+    // Data memory write signals
+    .wb_write_address_o   (wb_write_address),
+    .wb_write_data_o      (wb_write_data),
+    .wb_write_byte_o      (wb_write_byte),
+
+    // Processed load data sent back to register file
+    .wb_read_data_o       (wb_read_data),
+
+    // Instruction fetch PC
+    .inst_fetch_pc_o      (inst_fetch_pc),
+
+    // Individual branch stall signals
+    .wb_stall_first_o     (wb_stall_first),
+    .wb_stall_second_o    (wb_stall_second)
 );
 
 assign pc_out = fetch_pc;
