@@ -19,7 +19,20 @@
 	input       	[31: 0] inst_mem_read_data,
 	input       	[31: 0] dmem_read_data_temp,
 	input               	dmem_write_valid,
-	input               	dmem_read_valid
+	input               	dmem_read_valid,
+
+
+
+	 // Memory interface outputs
+	output [31:0] inst_mem_address,
+
+	output        dmem_read_ready,
+	output [31:0] dmem_read_address,
+
+	output        dmem_write_ready,
+	output [31:0] dmem_write_address,
+	output [31:0] dmem_write_data,
+	output [3:0]  dmem_write_byte,
 );
     
 	//Declaring Wires and Registers
