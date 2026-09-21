@@ -176,9 +176,14 @@ assign reg_rdata1 =
 	(!wb_stall && wb_alu_to_reg &&
  	(wb_dest_reg_sel == src1_select))
     	? (wb_mem_to_reg ? wb_read_data : wb_result)
-    	: TODO;
+	: regs[src1_select];
 
-assign reg_rdata2 = TODO
+assign reg_rdata2 =
+    (src2_select == 5'd0) ? 32'h0 :
+    (!wb_stall && wb_alu_to_reg &&
+     (wb_dest_reg_sel == src2_select))
+        ? (wb_mem_to_reg ? wb_read_data : wb_result)
+        : regs[src2_select];
 
 ////////////////////////////////////////////////////////////
 // TODO: Register File Writeback
