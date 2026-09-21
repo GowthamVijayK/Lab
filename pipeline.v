@@ -172,7 +172,7 @@ IF_ID IF_ID_stage (
 ////////////////////////////////////////////////////////////
 
 assign reg_rdata1 =
-	(src1_select == 5'd0) ? TODO:
+	(src1_select == 5'd0) ? 32'h0:
 	(!wb_stall && wb_alu_to_reg &&
  	(wb_dest_reg_sel == src1_select))
     	? (wb_mem_to_reg ? wb_read_data : wb_result)
@@ -206,8 +206,10 @@ always @(posedge clk or negedge reset) begin
 			regs[i] <= 32'h0;
 	end
 	else if (wb_alu_to_reg && !stall_read && !wb_stall) begin
+		if (wb_dest_reg_sel != 5'd0) begin
     	regs[wb_dest_reg_sel] <=
         	wb_mem_to_reg ? wb_read_data : wb_result;
+		end
 	end
 end
 
